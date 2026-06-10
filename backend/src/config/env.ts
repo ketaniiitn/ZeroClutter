@@ -17,7 +17,13 @@ export const env = {
   DATABASE_URL: required('DATABASE_URL'),
 
   JWT_SECRET: required('JWT_SECRET'),
-  JWT_EXPIRES_IN: optional('JWT_EXPIRES_IN', '7d'),
+
+  // Google OAuth (optional — app works without it; Google sign-in requires both)
+  GOOGLE_CLIENT_ID: optional('GOOGLE_CLIENT_ID', ''),
+  GOOGLE_CLIENT_SECRET: optional('GOOGLE_CLIENT_SECRET', ''),
+
+  // Frontend origin for CORS and OAuth redirects
+  FRONTEND_URL: optional('FRONTEND_URL', 'http://localhost:5173'),
 
   GEMINI_API_KEY: required('GEMINI_API_KEY'),
 

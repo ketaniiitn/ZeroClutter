@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
 const footerLinks = {
@@ -55,10 +56,10 @@ export function Footer() {
         >
           {/* Brand column */}
           <div className="md:col-span-2">
-            <a href="#" className="flex items-center gap-2.5 text-gray-900 dark:text-white font-semibold text-[15px] mb-4">
+            <Link to="/" className="flex items-center gap-2.5 text-gray-900 dark:text-white font-semibold text-[15px] mb-4">
               <ZeroClutterLogo />
               ZeroClutter
-            </a>
+            </Link>
             <p className="text-sm text-gray-500 dark:text-[#6B7280] leading-relaxed max-w-[220px]">
               Meetings create decisions. ZeroClutter makes sure they happen.
             </p>

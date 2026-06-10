@@ -1,15 +1,17 @@
 import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useScrolled } from '../hooks/useScrolled'
 import { useTheme } from '../contexts/ThemeContext'
+import { useAuth } from '../contexts/AuthContext'
 
 const navLinks = [
   { label: 'Features', href: '#features' },
-  { label: 'Solutions', href: '#solution' },
   { label: 'Pricing', href: '#pricing' },
-  { label: 'Customers', href: '#social-proof' },
-  { label: 'Resources', href: '#faq' },
+  { label: 'FAQ', href: '#faq' },
 ]
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 function SunIcon() {
   return (
@@ -64,10 +66,22 @@ function ZeroClutterLogo() {
   )
 }
 
+// ─── Navbar ───────────────────────────────────────────────────────────────────
+
 export function Navbar() {
   const scrolled = useScrolled()
   const { theme, toggle } = useTheme()
+  const { isAuthenticated, isLoading, logout } = useAuth()
+  const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const handleLogout = async () => {
+    setMobileOpen(false)
+    await logout()
+    navigate('/')
+  }
+
+  const closeMobile = () => setMobileOpen(false)
 
   return (
     <motion.nav
@@ -81,14 +95,15 @@ export function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+
         {/* Logo */}
-        <a
-          href="#"
+        <Link
+          to="/"
           className="flex items-center gap-2.5 text-gray-900 dark:text-white font-semibold text-[15px] hover:opacity-90 transition-opacity"
         >
           <ZeroClutterLogo />
           ZeroClutter
-        </a>
+        </Link>
 
         {/* Desktop nav links */}
         <nav className="hidden md:flex items-center gap-0.5" aria-label="Main navigation">
@@ -105,6 +120,7 @@ export function Navbar() {
 
         {/* Desktop right actions */}
         <div className="hidden md:flex items-center gap-2.5">
+          {/* Theme toggle */}
           <button
             onClick={toggle}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
@@ -120,22 +136,43 @@ export function Navbar() {
             </motion.div>
           </button>
 
-          <a
-            href="#pricing"
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-[#D1D5DB] border border-gray-300 dark:border-[#1F2937] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-          >
-            Book Demo
-          </a>
-
-          <a
-            href="#pricing"
-            className="px-4 py-2 text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors shadow-md shadow-indigo-500/25"
-          >
-            Start Free Trial
-          </a>
+          {/* Auth-aware CTA pair */}
+          {!isLoading && (
+            isAuthenticated ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-[#D1D5DB] border border-gray-300 dark:border-[#1F2937] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors shadow-md shadow-indigo-500/25"
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-[#D1D5DB] border border-gray-300 dark:border-[#1F2937] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-4 py-2 text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors shadow-md shadow-indigo-500/25"
+                >
+                  Start Free Trial
+                </Link>
+              </>
+            )
+          )}
         </div>
 
-        {/* Mobile */}
+        {/* Mobile controls */}
         <div className="flex md:hidden items-center gap-2">
           <button
             onClick={toggle}
@@ -170,27 +207,50 @@ export function Navbar() {
                 <a
                   key={link.label}
                   href={link.href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={closeMobile}
                   className="px-3 py-2.5 text-sm text-gray-600 dark:text-[#9CA3AF] hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                 >
                   {link.label}
                 </a>
               ))}
+
               <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[#1F2937] flex flex-col gap-2">
-                <a
-                  href="#pricing"
-                  onClick={() => setMobileOpen(false)}
-                  className="px-4 py-2.5 text-sm font-medium text-center text-gray-700 dark:text-[#F9FAFB] border border-gray-300 dark:border-[#1F2937] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-                >
-                  Book Demo
-                </a>
-                <a
-                  href="#pricing"
-                  onClick={() => setMobileOpen(false)}
-                  className="px-4 py-2.5 text-sm font-semibold text-center text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
-                >
-                  Start Free Trial
-                </a>
+                {!isLoading && (
+                  isAuthenticated ? (
+                    <>
+                      <Link
+                        to="/dashboard"
+                        onClick={closeMobile}
+                        className="px-4 py-2.5 text-sm font-medium text-center text-gray-700 dark:text-[#F9FAFB] border border-gray-300 dark:border-[#1F2937] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                      >
+                        Dashboard
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="px-4 py-2.5 text-sm font-semibold text-center text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
+                      >
+                        Log out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/login"
+                        onClick={closeMobile}
+                        className="px-4 py-2.5 text-sm font-medium text-center text-gray-700 dark:text-[#F9FAFB] border border-gray-300 dark:border-[#1F2937] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                      >
+                        Log in
+                      </Link>
+                      <Link
+                        to="/signup"
+                        onClick={closeMobile}
+                        className="px-4 py-2.5 text-sm font-semibold text-center text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
+                      >
+                        Start Free Trial
+                      </Link>
+                    </>
+                  )
+                )}
               </div>
             </div>
           </motion.div>
