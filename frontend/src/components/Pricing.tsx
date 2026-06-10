@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { openBookDemo } from '../lib/bookDemo'
 
 function CheckIcon() {
   return (
@@ -17,6 +19,7 @@ const plans = [
     description: 'For individuals and small teams trying ZeroClutter.',
     cta: 'Get started free',
     ctaVariant: 'outline' as const,
+    ctaAction: 'signup' as const,
     highlighted: false,
     badge: null,
     features: [
@@ -35,6 +38,7 @@ const plans = [
     description: 'For teams that are serious about execution.',
     cta: 'Start free trial',
     ctaVariant: 'primary' as const,
+    ctaAction: 'signup' as const,
     highlighted: true,
     badge: 'Most popular',
     features: [
@@ -55,6 +59,7 @@ const plans = [
     description: 'For larger teams with advanced security and admin needs.',
     cta: 'Book a demo',
     ctaVariant: 'outline' as const,
+    ctaAction: 'demo' as const,
     highlighted: false,
     badge: null,
     features: [
@@ -189,16 +194,30 @@ export function Pricing() {
                 )}
               </div>
 
-              <a
-                href="#"
-                className={`w-full py-2.5 rounded-lg text-sm font-semibold text-center transition-colors mb-6 ${
-                  plan.highlighted
-                    ? 'bg-white text-indigo-600 hover:bg-indigo-50'
-                    : 'bg-indigo-500 hover:bg-indigo-600 text-white'
-                }`}
-              >
-                {plan.cta}
-              </a>
+              {plan.ctaAction === 'signup' ? (
+                <Link
+                  to="/signup"
+                  className={`w-full py-2.5 rounded-lg text-sm font-semibold text-center transition-colors mb-6 block ${
+                    plan.highlighted
+                      ? 'bg-white text-indigo-600 hover:bg-indigo-50'
+                      : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                  }`}
+                >
+                  {plan.cta}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openBookDemo}
+                  className={`w-full py-2.5 rounded-lg text-sm font-semibold text-center transition-colors mb-6 ${
+                    plan.highlighted
+                      ? 'bg-white text-indigo-600 hover:bg-indigo-50'
+                      : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                  }`}
+                >
+                  {plan.cta}
+                </button>
+              )}
 
               <ul className="flex flex-col gap-2.5 flex-1">
                 {plan.features.map((feature) => (
@@ -228,12 +247,13 @@ export function Pricing() {
             <p className="font-semibold text-gray-900 dark:text-white text-sm">Need an enterprise plan?</p>
             <p className="text-sm text-gray-500 dark:text-[#6B7280] mt-0.5">Custom pricing, compliance features, and dedicated support for large organizations.</p>
           </div>
-          <a
-            href="#"
+          <button
+            type="button"
+            onClick={openBookDemo}
             className="flex-shrink-0 px-5 py-2.5 rounded-lg text-sm font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/8 hover:bg-indigo-100 dark:hover:bg-indigo-500/15 transition-colors"
           >
             Talk to sales →
-          </a>
+          </button>
         </motion.div>
       </div>
     </section>

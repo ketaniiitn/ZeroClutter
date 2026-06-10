@@ -52,3 +52,4 @@ Thumbs.db
 .cache/
 tmp/
 temp/
+AUTH_SPEC.md

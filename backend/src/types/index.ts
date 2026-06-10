@@ -1,12 +1,23 @@
 import { Request } from 'express';
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+}
+
 export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    name: string;
-  };
+  user?: AuthUser;
   traceId?: string;
+}
+
+export interface WorkspaceContext {
+  workspaceId: string;
+  role: 'OWNER' | 'ADMIN' | 'MEMBER';
+}
+
+export interface WorkspaceRequest extends AuthenticatedRequest {
+  workspace?: WorkspaceContext;
 }
 
 export interface TranscriptSegmentInput {

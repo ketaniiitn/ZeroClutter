@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { openBookDemo } from '../lib/bookDemo'
 
 export function FinalCTA() {
   return (
@@ -31,8 +33,8 @@ export function FinalCTA() {
             </p>
 
             <div className="mt-9 flex items-center justify-center flex-wrap gap-3">
-              <a
-                href="#pricing"
+              <Link
+                to="/signup"
                 className="inline-flex items-center gap-2 px-7 py-3.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-indigo-500/25"
               >
                 Start Free Trial
@@ -40,13 +42,14 @@ export function FinalCTA() {
                   <line x1="5" y1="12" x2="19" y2="12" />
                   <polyline points="12,5 19,12 12,19" />
                 </svg>
-              </a>
-              <a
-                href="#pricing"
+              </Link>
+              <button
+                type="button"
+                onClick={openBookDemo}
                 className="inline-flex items-center gap-2 px-7 py-3.5 text-gray-700 dark:text-[#D1D5DB] text-sm font-semibold rounded-xl border border-gray-300 dark:border-[#1F2937] hover:bg-white dark:hover:bg-[#111827] transition-colors"
               >
                 Book a Demo
-              </a>
+              </button>
             </div>
 
             {/* Trust signals */}
