@@ -35,13 +35,12 @@ export function Onboarding() {
           name: workspaceName.trim(),
         });
       }
-      navigate(`/${activeWorkspace.slug}/dashboard`, { replace: true });
+      navigate(`/${activeWorkspace.slug}/overview`, { replace: true });
     } catch (err) {
       const msg = (err as AxiosError<{ error: { message: string } }>)
         ?.response?.data?.error?.message;
-      // If workspace rename isn't supported yet, just proceed to dashboard
       if (msg) setError(msg);
-      else navigate(`/${activeWorkspace.slug}/dashboard`, { replace: true });
+      else navigate(`/${activeWorkspace.slug}/overview`, { replace: true });
     } finally {
       setSaving(false);
     }
@@ -49,7 +48,7 @@ export function Onboarding() {
 
   const handleSkip = () => {
     const slug = activeWorkspace?.slug ?? workspaces[0]?.slug;
-    navigate(slug ? `/${slug}/dashboard` : '/dashboard', { replace: true });
+    navigate(slug ? `/${slug}/overview` : '/login', { replace: true });
   };
 
   return (

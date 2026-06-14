@@ -11,18 +11,36 @@ import { Problem } from './components/Problem';
 import { Solution } from './components/Solution';
 import { Features } from './components/Features';
 import { ProductWalkthrough } from './components/ProductWalkthrough';
-import { Integrations } from './components/Integrations';
+import { Integrations as LandingIntegrations } from './components/Integrations';
 import { Pricing } from './components/Pricing';
 import { FAQ } from './components/FAQ';
 import { FinalCTA } from './components/FinalCTA';
 import { Footer } from './components/Footer';
 
-// Auth & app pages
+// Auth pages
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { AuthCallback } from './pages/AuthCallback';
 import { Onboarding } from './pages/Onboarding';
-import { Dashboard } from './pages/Dashboard';
+
+// App shell
+import { AppShell } from './shell/AppShell';
+
+// App pages
+import { Overview } from './pages/app/Overview';
+import { Meetings } from './pages/app/Meetings';
+import { Tasks } from './pages/app/Tasks';
+import { Assistant } from './pages/app/Assistant';
+import { Analytics } from './pages/app/Analytics';
+import { Integrations } from './pages/app/Integrations';
+import {
+  Settings,
+  SettingsProfile,
+  SettingsWorkspace,
+  SettingsNotifications,
+  SettingsSecurity,
+  SettingsBilling,
+} from './pages/app/Settings';
 
 function LandingPage() {
   return (
@@ -35,7 +53,7 @@ function LandingPage() {
         <Solution />
         <Features />
         <ProductWalkthrough />
-        <Integrations />
+        <LandingIntegrations />
         <Pricing />
         <FAQ />
         <FinalCTA />
@@ -57,19 +75,33 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
 
-            {/* Protected */}
+            {/* Protected — pre-shell routes */}
             <Route
               path="/onboarding"
               element={<ProtectedRoute><Onboarding /></ProtectedRoute>}
             />
+
+            {/* Protected — workspace-scoped SaaS shell */}
             <Route
-              path="/dashboard"
-              element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
-            />
-            <Route
-              path="/:workspaceSlug/dashboard"
-              element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
-            />
+              path="/:workspaceSlug"
+              element={<ProtectedRoute><AppShell /></ProtectedRoute>}
+            >
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route path="overview" element={<Overview />} />
+              <Route path="meetings" element={<Meetings />} />
+              <Route path="tasks" element={<Tasks />} />
+              <Route path="assistant" element={<Assistant />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="integrations" element={<Integrations />} />
+              <Route path="settings" element={<Settings />}>
+                <Route index element={<Navigate to="profile" replace />} />
+                <Route path="profile" element={<SettingsProfile />} />
+                <Route path="workspace" element={<SettingsWorkspace />} />
+                <Route path="notifications" element={<SettingsNotifications />} />
+                <Route path="security" element={<SettingsSecurity />} />
+                <Route path="billing" element={<SettingsBilling />} />
+              </Route>
+            </Route>
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />

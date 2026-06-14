@@ -28,7 +28,7 @@ export function Login() {
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string })?.from || '/dashboard';
+  const from = (location.state as { from?: string })?.from;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,8 +48,10 @@ export function Login() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
-      navigate(from, { replace: true });
+      const { workspaceSlug } = await login(email, password);
+      let destination = `/${workspaceSlug}/overview`;
+      if (from && from !== '/dashboard') destination = from;
+      navigate(destination, { replace: true });
     } catch (err) {
       const msg = (err as AxiosError<{ error: { message: string } }>)
         ?.response?.data?.error?.message ?? 'Sign in failed. Please try again.';

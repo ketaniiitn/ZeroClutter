@@ -1,6 +1,87 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Design Token CSS Custom Properties ──────────────────────────────────── */
+
+:root {
+  /* Backgrounds */
+  --bg-base: #FFFFFF;
+  --bg-surface: #F9FAFB;
+  --bg-elevated: #FFFFFF;
+  --bg-sunken: #F3F4F6;
+  --bg-overlay: rgba(0,0,0,0.4);
+
+  /* Borders */
+  --border-subtle: #E5E7EB;
+  --border-default: #D1D5DB;
+  --border-strong: #9CA3AF;
+  --border-focus: #6366F1;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+  --text-link: #4F46E5;
+
+  /* Shadows (light mode uses shadows, dark uses borders) */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+
+  /* Sidebar */
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 56px;
+  --topbar-height: 48px;
+  --mobile-nav-height: 56px;
+}
+
+.dark {
+  --bg-base: #0B0F17;
+  --bg-surface: #111827;
+  --bg-elevated: #1a2030;
+  --bg-sunken: #080c12;
+  --bg-overlay: rgba(0,0,0,0.6);
+
+  --border-subtle: #1F2937;
+  --border-default: #374151;
+  --border-strong: #4B5563;
+
+  --text-primary: #F9FAFB;
+  --text-secondary: #9CA3AF;
+  --text-tertiary: #6B7280;
+  --text-link: #818CF8;
+
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: 0 0 0 1px rgba(99,102,241,0.15), 0 8px 24px rgba(0,0,0,0.5);
+}
+
+/* ─── Skeleton shimmer ─────────────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface) 25%,
+    var(--bg-elevated) 50%,
+    var(--bg-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+    background: var(--bg-surface);
+  }
+}
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -15,6 +96,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
 }
 
 ::selection {
