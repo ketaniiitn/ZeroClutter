@@ -29,10 +29,9 @@ export function AuthCallback() {
 
       if (isNewUser) {
         navigate('/onboarding', { replace: true });
-      } else if (workspaceSlug) {
-        navigate(`/${workspaceSlug}/dashboard`, { replace: true });
       } else {
-        navigate('/dashboard', { replace: true });
+        const slug = workspaceSlug || result.workspaces[0]?.slug;
+        navigate(slug ? `/${slug}/overview` : '/login', { replace: true });
       }
     });
   }, [restoreSession, navigate, params]);

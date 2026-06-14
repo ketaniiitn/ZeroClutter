@@ -71,7 +71,7 @@ function ZeroClutterLogo() {
 export function Navbar() {
   const scrolled = useScrolled()
   const { theme, toggle } = useTheme()
-  const { isAuthenticated, isLoading, logout } = useAuth()
+  const { isAuthenticated, isLoading, logout, activeWorkspace } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -141,10 +141,10 @@ export function Navbar() {
             isAuthenticated ? (
               <>
                 <Link
-                  to="/dashboard"
+                  to={`/${activeWorkspace?.slug}/overview`}
                   className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-[#D1D5DB] border border-gray-300 dark:border-[#1F2937] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
-                  Dashboard
+                  Overview
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -219,11 +219,11 @@ export function Navbar() {
                   isAuthenticated ? (
                     <>
                       <Link
-                        to="/dashboard"
+                        to={`/${activeWorkspace?.slug}/overview`}
                         onClick={closeMobile}
                         className="px-4 py-2.5 text-sm font-medium text-center text-gray-700 dark:text-[#F9FAFB] border border-gray-300 dark:border-[#1F2937] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                       >
-                        Dashboard
+                        Overview
                       </Link>
                       <button
                         onClick={handleLogout}

@@ -37,7 +37,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ workspaceSlug: string }>;
   signup: (name: string, email: string, password: string) => Promise<{ workspaceSlug: string }>;
   loginWithGoogle: () => void;
   logout: () => Promise<void>;
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<{ workspaceSlug: string }> => {
     const res = await api.post<{
       data: {
         user: AuthUser;
@@ -122,7 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(accessToken);
     setUser(u);
     setWorkspaces(ws);
-    setActiveWorkspace(aw ?? ws[0] ?? null);
+    const resolved = aw ?? ws[0] ?? null;
+    setActiveWorkspace(resolved);
+    return { workspaceSlug: resolved?.slug ?? ws[0]?.slug ?? '' };
   }, []);
 
   const signup = useCallback(async (name: string, email: string, password: string) => {
