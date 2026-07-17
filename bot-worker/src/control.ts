@@ -5,6 +5,18 @@ import { logger } from './logger';
 
 const CONTROL_CHANNEL = 'meeting-bot:control';
 
+export const handleControlMessage = (raw: string): void => {
+  try {
+    const { botId, action } = JSON.parse(raw) as { botId: string; action: string };
+    if (action === 'leave') {
+      const found = registry.markLeave(botId);
+      logger.info('Leave signal received', { botId, found });
+    }
+  } catch (err) {
+    logger.error('Malformed control message', { message: raw, error: (err as Error).message });
+  }
+};
+
 export const startControlSubscriber = (): IORedis => {
   const sub = new IORedis(config.REDIS_URL, { maxRetriesPerRequest: null });
 
@@ -13,17 +25,7 @@ export const startControlSubscriber = (): IORedis => {
     else logger.info('Subscribed to control channel', { channel: CONTROL_CHANNEL });
   });
 
-  sub.on('message', (_channel, message) => {
-    try {
-      const { botId, action } = JSON.parse(message) as { botId: string; action: string };
-      if (action === 'leave') {
-        const found = registry.markLeave(botId);
-        logger.info('Leave signal received', { botId, found });
-      }
-    } catch (err) {
-      logger.error('Malformed control message', { message, error: (err as Error).message });
-    }
-  });
+  sub.on('message', (_channel, message) => handleControlMessage(message));
 
   return sub;
 };
