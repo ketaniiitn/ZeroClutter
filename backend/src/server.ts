@@ -3,6 +3,7 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { connectRedis, disconnectRedis } from './config/redis';
 import { logger } from './utils/logger';
 import { startReminderScheduler } from './modules/reminders/reminder.scheduler';
+import { closeBotQueue } from './modules/meeting-bot/meeting-bot.queue';
 import app from './app';
 
 const start = async (): Promise<void> => {
@@ -24,6 +25,7 @@ const start = async (): Promise<void> => {
     server.close(async () => {
       await disconnectDatabase();
       await disconnectRedis();
+      await closeBotQueue();
       logger.info('Server closed.');
       process.exit(0);
     });

@@ -14,6 +14,7 @@ import { globalRateLimit } from './middleware/rate-limit.middleware';
 import authRoutes from './modules/auth/auth.routes';
 import meetingRoutes from './modules/meetings/meeting.routes';
 import actionItemRoutes from './modules/action-items/action-item.routes';
+import meetingBotRoutes from './modules/meeting-bot/meeting-bot.routes';
 import healthRoutes from './modules/health/health.routes';
 import evaluationRoutes from './modules/evaluation/evaluation.routes';
 
@@ -54,6 +55,7 @@ app.use('/api/evaluation', evaluationRoutes);
 app.use('/auth', authRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/action-items', actionItemRoutes);
+app.use('/api/bots', meetingBotRoutes);
 
 // 404 for unmatched routes
 app.use(notFoundMiddleware);
