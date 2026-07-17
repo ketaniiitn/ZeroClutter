@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "test": "jest --forceExit --detectOpenHandles",
     "lint": "tsc --noEmit",
-    "prisma:generate": "prisma generate --schema=../backend/prisma/schema.prisma"
+    "prisma:generate": "node -e \"const fs=require('fs');fs.mkdirSync('prisma',{recursive:true});fs.copyFileSync('../backend/prisma/schema.prisma','prisma/schema.prisma')\" && prisma generate --schema=prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
