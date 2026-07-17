@@ -20,6 +20,10 @@ export const processJoin = async (botId: string): Promise<void> => {
     logger.info('Skipping join for terminal bot', { botId, status: bot.status });
     return;
   }
+  if (bot.leaveRequested) {
+    await updateStatus(botId, BOT_STATUS.LEFT, 'Leave requested before join');
+    return;
+  }
 
   const session = registry.register(botId);
   try {

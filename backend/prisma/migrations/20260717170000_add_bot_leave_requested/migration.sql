@@ -1,0 +1,1 @@
+ALTER TABLE "MeetingBot" ADD COLUMN "leaveRequested" BOOLEAN NOT NULL DEFAULT false;

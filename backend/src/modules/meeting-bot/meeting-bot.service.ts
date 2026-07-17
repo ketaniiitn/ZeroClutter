@@ -45,6 +45,7 @@ export const listBots = async (userId: string, page: number, limit: number) => {
 export const requestLeave = async (id: string, userId: string) => {
   const bot = await getBotById(id, userId);
   if (TERMINAL_STATUSES.includes(bot.status as BotStatus)) return bot;
+  await prisma.meetingBot.update({ where: { id: bot.id }, data: { leaveRequested: true } });
   await publishLeave(bot.id);
-  return bot;
+  return { ...bot, leaveRequested: true };
 };

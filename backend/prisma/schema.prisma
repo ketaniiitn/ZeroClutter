@@ -53,16 +53,16 @@ model User {
 // ─── Workspace ────────────────────────────────────────────────────────────────
 
 model Workspace {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  slug      String    @unique
+  slug      String   @unique
   logoUrl   String?
-  planTier  PlanTier  @default(FREE)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  planTier  PlanTier @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  members   WorkspaceMember[]
-  meetings  Meeting[]
+  members  WorkspaceMember[]
+  meetings Meeting[]
 
   @@index([slug])
 }
@@ -190,19 +190,20 @@ model ReminderHistory {
 // ─── Meeting Bot ──────────────────────────────────────────────────────────────
 
 model MeetingBot {
-  id           String    @id @default(cuid())
-  userId       String
-  meetingUrl   String
-  platform     String    @default("GOOGLE_MEET")
-  displayName  String
-  status       String    @default("PENDING")
-  statusDetail String?
-  botEmail     String?
-  meetingId    String?
-  joinedAt     DateTime?
-  leftAt       DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  userId         String
+  meetingUrl     String
+  platform       String    @default("GOOGLE_MEET")
+  displayName    String
+  status         String    @default("PENDING")
+  statusDetail   String?
+  leaveRequested Boolean   @default(false)
+  botEmail       String?
+  meetingId      String?
+  joinedAt       DateTime?
+  leftAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

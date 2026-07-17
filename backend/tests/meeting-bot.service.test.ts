@@ -80,8 +80,17 @@ describe('getBotById', () => {
 
 describe('requestLeave', () => {
   it('publishes a leave signal for an active bot', async () => {
-    mockPrisma.meetingBot.findUnique.mockResolvedValue({ id: 'b', userId: 'u1', status: 'IN_CALL' });
+    mockPrisma.meetingBot.findUnique.mockResolvedValue({
+      id: 'b',
+      userId: 'u1',
+      status: 'IN_CALL',
+      leaveRequested: false,
+    });
     await requestLeave('b', 'u1');
+    expect(mockPrisma.meetingBot.update).toHaveBeenCalledWith({
+      where: { id: 'b' },
+      data: { leaveRequested: true },
+    });
     expect(publishLeave).toHaveBeenCalledWith('b');
   });
 
@@ -89,5 +98,8 @@ describe('requestLeave', () => {
     mockPrisma.meetingBot.findUnique.mockResolvedValue({ id: 'b', userId: 'u1', status: 'LEFT' });
     await requestLeave('b', 'u1');
     expect(publishLeave).not.toHaveBeenCalled();
+    expect(mockPrisma.meetingBot.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ leaveRequested: true }) }),
+    );
   });
 });
