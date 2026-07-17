@@ -141,6 +141,63 @@ The cache is keyed per user so users never see each other's data. If Redis is un
 
 ---
 
+## Meeting Bot (Google Meet)
+
+Dispatch a bot that joins a Google Meet call as a named guest. The bot appears
+in the participant list and the host admits it. (Recording/transcription are
+future work.)
+
+This feature spans two services:
+
+- **backend** — exposes `/api/bots` and enqueues join jobs (requires `REDIS_URL`).
+- **bot-worker** — a separate service (`../bot-worker`) that runs Playwright and
+  actually joins the call. See `bot-worker/.env.example` for its config.
+
+### Running the bot-worker
+
+```bash
+cd ../bot-worker
+cp .env.example .env      # point DATABASE_URL + REDIS_URL at the SAME db/redis as the backend
+npm install
+npm run prisma:generate
+npx playwright install --with-deps chromium
+npm run dev
+```
+
+### Dispatch a bot
+
+```bash
+curl -X POST http://localhost:3000/api/bots \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-token>" \
+  -d '{"meetingUrl":"https://meet.google.com/abc-defg-hij"}'
+# → 202 { "data": { "id": "...", "status": "PENDING" } }
+
+curl http://localhost:3000/api/bots/<id> -H "Authorization: Bearer <token>"   # poll status
+curl -X POST http://localhost:3000/api/bots/<id>/leave -H "Authorization: Bearer <token>"  # tell it to leave
+```
+
+### Status lifecycle
+
+`PENDING → JOINING → WAITING_ADMISSION → IN_CALL → LEFT` (or `FAILED` with `statusDetail`).
+
+### End-to-end verification (manual)
+
+Prerequisites: Postgres + Redis running; backend running (`cd backend && npm run dev`); bot-worker running (`cd bot-worker && npm run dev` — set `HEADLESS=false` in `bot-worker/.env` to watch it). Have a registered user token and a live Google Meet you host.
+
+1. Start a Google Meet and copy the link.
+2. `POST /api/bots` with the link → note the returned `id` and `202`.
+3. Watch the bot-worker logs go `JOINING → WAITING_ADMISSION`; a join request appears in your Meet.
+4. Admit the participant (named `ZeroClutter Notetaker`) in Meet.
+5. Poll `GET /api/bots/:id` → status becomes `IN_CALL`, `joinedAt` set. Confirm the bot is in the participant list with mic + camera off.
+6. `POST /api/bots/:id/leave` → the bot's browser closes; poll shows `LEFT`, `leftAt` set.
+7. Negative check: `POST /api/bots` with `https://zoom.us/j/1` → `400` validation error.
+8. Negative check: stop Redis, `POST /api/bots` → `503 SERVICE_UNAVAILABLE`.
+
+Expected: all steps behave as described. If a selector fails, adjust only `bot-worker/src/joiners/selectors.ts`.
+
+---
+
 ## CI/CD Pipeline
 
 The GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push and pull request:
