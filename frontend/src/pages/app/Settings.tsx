@@ -1,5 +1,5 @@
-import { Settings as SettingsIcon, User, Building2, Bell, Shield, CreditCard } from 'lucide-react'
-import { NavLink, Outlet, Navigate, useParams } from 'react-router-dom'
+import { User, Building2, Bell, Shield, CreditCard } from 'lucide-react'
+import { NavLink, Outlet } from 'react-router-dom'
 import { cn } from '../../lib/cn'
 
 const SETTINGS_NAV = [

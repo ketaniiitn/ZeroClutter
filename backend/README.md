@@ -97,7 +97,7 @@ npm test                  # Run all tests
 npm run test:coverage     # Run with coverage report
 ```
 
-48 unit tests across 4 test files. No database or external API required — all tests are pure unit tests.
+62 unit tests across 6 test files. No database or external API required — all tests are pure unit tests.
 
 ---
 
@@ -138,6 +138,136 @@ When `REDIS_URL` is set, the service caches expensive database queries:
 | `GET /api/meetings` (list) | 2 minutes | `POST /api/meetings` creates a new meeting |
 
 The cache is keyed per user so users never see each other's data. If Redis is unavailable or `REDIS_URL` is not set, the application falls back to direct database queries with no errors or behaviour change.
+
+---
+
+## Meeting Bot (Google Meet)
+
+Dispatch a bot that joins a Google Meet call as a named guest. The bot appears
+in the participant list and the host admits it. (Recording/transcription are
+future work.)
+
+This feature spans two services:
+
+- **backend** — exposes `/api/bots` and enqueues join jobs (requires `REDIS_URL`).
+- **bot-worker** — a separate service (`../bot-worker`) that runs Playwright and
+  actually joins the call. See `bot-worker/.env.example` for its config.
+
+### Running the bot-worker
+
+```bash
+cd ../bot-worker
+cp .env.example .env      # point DATABASE_URL + REDIS_URL at the SAME db/redis as the backend
+npm install
+npm run prisma:generate
+npx playwright install --with-deps chromium
+npm run dev
+```
+
+### Dispatch a bot
+
+```bash
+curl -X POST http://localhost:3000/api/bots \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-token>" \
+  -d '{"meetingUrl":"https://meet.google.com/abc-defg-hij"}'
+# → 202 { "data": { "id": "...", "status": "PENDING" } }
+
+curl http://localhost:3000/api/bots/<id> -H "Authorization: Bearer <token>"   # poll status
+curl -X POST http://localhost:3000/api/bots/<id>/leave -H "Authorization: Bearer <token>"  # tell it to leave
+```
+
+### Status lifecycle
+
+`PENDING → JOINING → WAITING_ADMISSION → IN_CALL → LEFT` (or `FAILED` with `statusDetail`).
+
+### Optional dedicated Google bot account fallback
+
+The worker defaults to `GOOGLE_AUTH_MODE=hybrid`: it tries an unsigned named guest first,
+then retries once with a dedicated Google account only when Meet requires an account or
+blocks unsigned guests.
+
+1. Create a dedicated Google account for the bot. Do not use a personal account.
+2. Install [Google Chrome](https://www.google.com/chrome/) on the machine that runs `bot-worker`
+   (Playwright's bundled Chromium is rejected by Google sign-in).
+3. Set `GOOGLE_BOT_EMAIL` in `bot-worker/.env`.
+4. Run `cd bot-worker && npm run google:login`.
+5. Complete password, MFA, CAPTCHA, and security prompts manually in the opened **Chrome** window
+   (isolated session — not your everyday Chrome profile).
+6. Press Enter in the terminal after login completes.
+
+If Google shows **"This browser or app may not be secure"**, close the window, confirm Chrome is
+installed, and rerun `npm run google:login`. Do not use Playwright Chromium for this step.
+
+The saved `.auth/google-state.json` file is a credential. It is gitignored and must be
+mounted as a protected file in production. Never commit or print it. Rerun the login command
+when Google expires the session.
+
+Google Workspace administrators and meeting hosts can block unsigned guests and external
+accounts. ZeroClutter reports those restrictions but cannot bypass them.
+
+### Auth modes (`GOOGLE_AUTH_MODE`)
+
+| Mode | Behavior |
+|---|---|
+| `guest` | Unsigned named guest only (`BOT_DEFAULT_NAME` or per-job `displayName`). |
+| `account` | Authenticated join only; requires a valid `GOOGLE_STORAGE_STATE_PATH`. |
+| `hybrid` | Guest first; one authenticated retry for account-required or guest-blocked screens. |
+
+In `hybrid` mode, a missing or expired session does not block the initial guest attempt. If
+authenticated fallback is needed and the session is missing or invalid, the bot fails with
+`statusDetail` instructing `npm run google:login`.
+
+`botEmail` is set to `GOOGLE_BOT_EMAIL` when an authenticated join is attempted, either
+directly in `account` mode or during a `hybrid` fallback. Because it is persisted before
+the authenticated attempt starts, it may remain set if that attempt fails.
+
+### Security
+
+- No Google password, MFA secret, or recovery code is stored in `.env`, source control, or
+  the database.
+- `GOOGLE_STORAGE_STATE_PATH` (default `.auth/google-state.json`) is a credential — treat it
+  like a password. Mount it as a protected secret file in production; never bake it into
+  container images.
+- Each job launches one Playwright browser and creates one isolated context per join
+  attempt. A `hybrid` fallback closes the guest context before sequentially creating an
+  authenticated context that loads the storage-state file. Jobs never reuse a personal
+  Chrome profile.
+- `.auth/` and `.debug/` are gitignored. Debug dumps intentionally omit input values,
+  cookies, tokens, and storage state.
+- Rotate an expired session by rerunning `cd bot-worker && npm run google:login`.
+
+### Troubleshooting
+
+| Symptom / `statusDetail` | Likely cause | Action |
+|---|---|---|
+| `Bot Google session is missing; run npm run google:login` | No storage-state file when account fallback is required | Run `npm run google:login` in `bot-worker` |
+| Google: "This browser or app may not be secure" during login | Playwright Chromium was used, or automation flags were detected | Install Google Chrome and rerun `npm run google:login` (worker uses system Chrome) |
+| `Bot Google session is invalid; run npm run google:login` | Corrupt or empty storage-state file | Delete `.auth/google-state.json` and rerun login |
+| `Bot Google session expired; run npm run google:login` | Google redirected to sign-in during authenticated join | Rerun `npm run google:login` |
+| `Guest access blocked; retrying with bot account` | Meet blocked unsigned guests; hybrid retry in progress | Normal in `hybrid` mode — ensure session is valid |
+| `Host organization blocks external accounts` | Workspace policy blocks the dedicated bot account | Cannot bypass; host must allow the bot account or use guest-allowed meetings |
+| `Google Meet join screen was not recognized; inspect bot-worker/.debug` | The lobby remained unrecognized until timeout | Inspect the sanitized timeout dump in `bot-worker/.debug/`; update `selectors.ts` if Meet changed |
+| `Guest name input was not found` | Guest lobby was recognized, but name-input selectors drifted | Update the name-input selectors in `selectors.ts`; this path does not currently create a `.debug` dump |
+| `Join button was not found` | Lobby was recognized, but join-button selectors drifted | Update the join-button selectors in `selectors.ts`; this path does not currently create a `.debug` dump |
+| `Not admitted within N min` | Host never admitted the bot | Admit the bot in Meet or increase `ADMISSION_TIMEOUT_MS` |
+| `Host denied admission` | Host rejected the join request | Retry dispatch or ask host to admit |
+| Invalid/ended meeting failures | Bad URL or meeting already ended | No authenticated fallback; fix the meeting link |
+
+### End-to-end verification (manual)
+
+Prerequisites: Postgres + Redis running; backend running (`cd backend && npm run dev`); bot-worker running (`cd bot-worker && npm run dev` — set `HEADLESS=false` in `bot-worker/.env` to watch it). Have a registered user token and a live Google Meet you host.
+
+1. Start a Google Meet and copy the link.
+2. `POST /api/bots` with the link → note the returned `id` and `202`.
+3. Watch the bot-worker logs go `JOINING → WAITING_ADMISSION`; a join request appears in your Meet.
+4. Admit the participant (named `ZeroClutter Notetaker`) in Meet.
+5. Poll `GET /api/bots/:id` → status becomes `IN_CALL`, `joinedAt` set. Confirm the bot is in the participant list with mic + camera off.
+6. `POST /api/bots/:id/leave` → the bot's browser closes; poll shows `LEFT`, `leftAt` set.
+7. Negative check: `POST /api/bots` with `https://zoom.us/j/1` → `400` validation error.
+8. Negative check: stop Redis, `POST /api/bots` → `503 SERVICE_UNAVAILABLE`.
+
+Expected: all steps behave as described. If a selector fails, adjust only `bot-worker/src/joiners/selectors.ts`.
 
 ---
 
@@ -350,5 +480,5 @@ src/
 prisma/
 ├── schema.prisma                  # Database schema (6 models)
 └── migrations/                    # Versioned migration history
-tests/                             # 48 unit tests (Jest + ts-jest)
+tests/                             # 62 unit tests (Jest + ts-jest)
 ```

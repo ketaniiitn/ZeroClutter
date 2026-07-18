@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { Sparkles, Video } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { EmptyState } from '../../ui/EmptyState'
 
 function PageHeader() {

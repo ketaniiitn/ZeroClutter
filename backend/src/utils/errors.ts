@@ -48,3 +48,9 @@ export class AIError extends AppError {
     super(message, 'AI_ERROR', 502);
   }
 }
+
+export class ServiceUnavailableError extends AppError {
+  constructor(message = 'Service temporarily unavailable') {
+    super(message, 'SERVICE_UNAVAILABLE', 503);
+  }
+}

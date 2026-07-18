@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, Video, CheckSquare, X, ArrowRight } from 'lucide-react'
+import { Search, Video, CheckSquare, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useShell } from '../contexts/ShellContext'

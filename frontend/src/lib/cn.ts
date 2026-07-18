@@ -1,3 +1,8 @@
-export function cn(...classes: (string | undefined | false | null | 0)[]): string {
-  return classes.filter(Boolean).join(' ')
+type ClassPrimitive = string | number | bigint | boolean | undefined | null
+
+export function cn(...classes: (ClassPrimitive | ClassPrimitive[])[]): string {
+  return classes
+    .flat()
+    .filter((c): c is string => typeof c === 'string' && c.length > 0)
+    .join(' ')
 }

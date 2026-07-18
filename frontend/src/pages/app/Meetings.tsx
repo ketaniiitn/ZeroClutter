@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { Video, Upload, List, LayoutGrid, Calendar, Clock, Users } from 'lucide-react'
 import { Button } from '../../ui/Button'
 import { SearchInput } from '../../ui/Input'
@@ -7,7 +6,6 @@ import { Input, FileInput } from '../../ui/Input'
 import { Modal } from '../../ui/Modal'
 import { EmptyState } from '../../ui/EmptyState'
 import { StatusBadge } from '../../ui/Badge'
-import { SkeletonTableRows } from '../../ui/Skeleton'
 import { cn } from '../../lib/cn'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────

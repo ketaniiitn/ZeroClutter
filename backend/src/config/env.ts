@@ -31,6 +31,7 @@ export const env = {
   TELEGRAM_CHAT_ID: required('TELEGRAM_CHAT_ID'),
 
   REDIS_URL: optional('REDIS_URL', ''),
+  BOT_DEFAULT_NAME: optional('BOT_DEFAULT_NAME', 'ZeroClutter Notetaker'),
 
   CANDIDATE_NAME: optional('CANDIDATE_NAME', 'Vyhm Dwivedi'),
   CANDIDATE_EMAIL: optional('CANDIDATE_EMAIL', 'dwivedivyhm@gmail.com'),

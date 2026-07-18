@@ -29,6 +29,7 @@ import { AppShell } from './shell/AppShell';
 // App pages
 import { Overview } from './pages/app/Overview';
 import { Meetings } from './pages/app/Meetings';
+import { Bots } from './pages/app/Bots';
 import { Tasks } from './pages/app/Tasks';
 import { Assistant } from './pages/app/Assistant';
 import { Analytics } from './pages/app/Analytics';
@@ -89,6 +90,7 @@ function App() {
               <Route index element={<Navigate to="overview" replace />} />
               <Route path="overview" element={<Overview />} />
               <Route path="meetings" element={<Meetings />} />
+              <Route path="bots" element={<Bots />} />
               <Route path="tasks" element={<Tasks />} />
               <Route path="assistant" element={<Assistant />} />
               <Route path="analytics" element={<Analytics />} />
