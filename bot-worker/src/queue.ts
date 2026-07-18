@@ -3,7 +3,7 @@ import IORedis from 'ioredis';
 import { config } from './config';
 import prisma from './prisma';
 import { BOT_STATUS } from './constants';
-import { updateStatus } from './status';
+import { updateBotIdentity, updateStatus } from './status';
 import * as registry from './session-registry';
 import { googleMeetJoiner } from './joiners/google-meet.joiner';
 import { logger } from './logger';
@@ -27,10 +27,30 @@ export const processJoin = async (botId: string): Promise<void> => {
 
   const session = registry.register(botId);
   try {
+    // Re-check after registration so a leave that landed between the initial
+    // read and register is not dropped (control channel only marks live sessions).
+    const latest = await prisma.meetingBot.findUnique({ where: { id: botId } });
+    if (!latest) {
+      logger.warn('Join job for unknown bot after register', { botId });
+      return;
+    }
+    if (latest.status === BOT_STATUS.LEFT || latest.status === BOT_STATUS.FAILED) {
+      logger.info('Skipping join for terminal bot after register', {
+        botId,
+        status: latest.status,
+      });
+      return;
+    }
+    if (latest.leaveRequested) {
+      await updateStatus(botId, BOT_STATUS.LEFT, 'Leave requested before join');
+      return;
+    }
+
     await googleMeetJoiner.join(
       { botId, meetingUrl: bot.meetingUrl, displayName: bot.displayName },
       {
         onStatus: (status, detail) => updateStatus(botId, status, detail),
+        onIdentity: (botEmail) => updateBotIdentity(botId, botEmail),
         isLeaveRequested: () => session.leaveRequested,
         setBrowser: (browser) => {
           session.browser = browser;

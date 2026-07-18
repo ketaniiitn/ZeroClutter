@@ -14,6 +14,7 @@ jest.mock('../src/session-registry', () => ({
 
 jest.mock('../src/status', () => ({
   updateStatus: jest.fn(),
+  updateBotIdentity: jest.fn(),
 }));
 
 jest.mock('../src/joiners/google-meet.joiner', () => ({
@@ -22,7 +23,7 @@ jest.mock('../src/joiners/google-meet.joiner', () => ({
 
 import prisma from '../src/prisma';
 import * as registry from '../src/session-registry';
-import { updateStatus } from '../src/status';
+import { updateBotIdentity, updateStatus } from '../src/status';
 import { googleMeetJoiner } from '../src/joiners/google-meet.joiner';
 import { processJoin } from '../src/queue';
 import { BOT_STATUS } from '../src/constants';
@@ -40,6 +41,7 @@ const mockFindUnique = (prisma as unknown as { meetingBot: { findUnique: jest.Mo
 const mockRegister = registry.register as jest.Mock;
 const mockUnregister = registry.unregister as jest.Mock;
 const mockUpdateStatus = updateStatus as jest.Mock;
+const mockUpdateBotIdentity = updateBotIdentity as jest.Mock;
 const mockJoin = googleMeetJoiner.join as jest.Mock;
 
 const baseBot = {
@@ -81,14 +83,23 @@ describe('processJoin', () => {
     const session: FakeSession = { browser: null, leaveRequested: false };
     mockRegister.mockReturnValue(session);
     mockFindUnique.mockResolvedValue({ ...baseBot, status: BOT_STATUS.PENDING, leaveRequested: false });
+    let capturedDeps:
+      | {
+          setBrowser: (browser: FakeBrowser) => void;
+          onIdentity: (email: string | null) => Promise<void>;
+        }
+      | undefined;
     mockJoin.mockImplementation(async (_ctx, deps) => {
+      capturedDeps = deps;
       deps.setBrowser(fakeBrowser);
     });
 
     await processJoin('b1');
+    await capturedDeps?.onIdentity('bot@example.com');
 
     expect(mockRegister).toHaveBeenCalledWith('b1');
     expect(mockJoin).toHaveBeenCalled();
+    expect(mockUpdateBotIdentity).toHaveBeenCalledWith('b1', 'bot@example.com');
     expect(fakeBrowser.close).toHaveBeenCalled();
     expect(mockUnregister).toHaveBeenCalledWith('b1');
   });
@@ -104,6 +115,34 @@ describe('processJoin', () => {
 
     expect(mockUpdateStatus).toHaveBeenCalledWith('b1', BOT_STATUS.FAILED, 'boom');
     expect(fakeBrowser.close).toHaveBeenCalled();
+    expect(mockUnregister).toHaveBeenCalledWith('b1');
+  });
+
+  it('re-checks leaveRequested after register and skips join when leave landed in between', async () => {
+    const session: FakeSession = { browser: null, leaveRequested: false };
+    mockRegister.mockReturnValue(session);
+    mockFindUnique
+      .mockResolvedValueOnce({
+        ...baseBot,
+        status: BOT_STATUS.PENDING,
+        leaveRequested: false,
+      })
+      .mockResolvedValueOnce({
+        ...baseBot,
+        status: BOT_STATUS.PENDING,
+        leaveRequested: true,
+      });
+
+    await processJoin('b1');
+
+    expect(mockRegister).toHaveBeenCalledWith('b1');
+    expect(mockFindUnique).toHaveBeenCalledTimes(2);
+    expect(mockJoin).not.toHaveBeenCalled();
+    expect(mockUpdateStatus).toHaveBeenCalledWith(
+      'b1',
+      BOT_STATUS.LEFT,
+      'Leave requested before join',
+    );
     expect(mockUnregister).toHaveBeenCalledWith('b1');
   });
 });

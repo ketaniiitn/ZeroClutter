@@ -4,7 +4,7 @@ jest.mock('../src/prisma', () => ({
 }));
 
 import prisma from '../src/prisma';
-import { updateStatus } from '../src/status';
+import { updateBotIdentity, updateStatus } from '../src/status';
 import { BOT_STATUS } from '../src/constants';
 
 const mockUpdate = (prisma as unknown as { meetingBot: { update: jest.Mock } }).meetingBot.update;
@@ -39,5 +39,23 @@ describe('updateStatus', () => {
     const arg = mockUpdate.mock.calls[0][0];
     expect(arg.data.joinedAt).toBeUndefined();
     expect(arg.data.leftAt).toBeUndefined();
+  });
+});
+
+describe('updateBotIdentity', () => {
+  it('persists the bot email used for the join attempt', async () => {
+    await updateBotIdentity('b1', 'bot@example.com');
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: 'b1' },
+      data: { botEmail: 'bot@example.com' },
+    });
+  });
+
+  it('clears the bot email for a guest attempt', async () => {
+    await updateBotIdentity('b1', null);
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: 'b1' },
+      data: { botEmail: null },
+    });
   });
 });

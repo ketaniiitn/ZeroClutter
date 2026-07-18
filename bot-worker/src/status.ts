@@ -7,3 +7,13 @@ export const updateStatus = async (botId: string, status: string, detail?: strin
   if (status === BOT_STATUS.LEFT || status === BOT_STATUS.FAILED) data.leftAt = new Date();
   await prisma.meetingBot.update({ where: { id: botId }, data });
 };
+
+export const updateBotIdentity = async (
+  botId: string,
+  botEmail: string | null,
+): Promise<void> => {
+  await prisma.meetingBot.update({
+    where: { id: botId },
+    data: { botEmail },
+  });
+};

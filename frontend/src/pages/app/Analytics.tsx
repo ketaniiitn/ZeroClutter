@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { BarChart2, Video } from 'lucide-react'
+import { BarChart2 } from 'lucide-react'
 import { EmptyState } from '../../ui/EmptyState'
 
 function PageHeader() {

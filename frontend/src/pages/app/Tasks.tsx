@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { CheckSquare, Video } from 'lucide-react'
+import { CheckSquare } from 'lucide-react'
 import { EmptyState } from '../../ui/EmptyState'
 
 function PageHeader() {

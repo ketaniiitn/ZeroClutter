@@ -97,7 +97,7 @@ npm test                  # Run all tests
 npm run test:coverage     # Run with coverage report
 ```
 
-48 unit tests across 4 test files. No database or external API required — all tests are pure unit tests.
+62 unit tests across 6 test files. No database or external API required — all tests are pure unit tests.
 
 ---
 
@@ -180,6 +180,79 @@ curl -X POST http://localhost:3000/api/bots/<id>/leave -H "Authorization: Bearer
 ### Status lifecycle
 
 `PENDING → JOINING → WAITING_ADMISSION → IN_CALL → LEFT` (or `FAILED` with `statusDetail`).
+
+### Optional dedicated Google bot account fallback
+
+The worker defaults to `GOOGLE_AUTH_MODE=hybrid`: it tries an unsigned named guest first,
+then retries once with a dedicated Google account only when Meet requires an account or
+blocks unsigned guests.
+
+1. Create a dedicated Google account for the bot. Do not use a personal account.
+2. Install [Google Chrome](https://www.google.com/chrome/) on the machine that runs `bot-worker`
+   (Playwright's bundled Chromium is rejected by Google sign-in).
+3. Set `GOOGLE_BOT_EMAIL` in `bot-worker/.env`.
+4. Run `cd bot-worker && npm run google:login`.
+5. Complete password, MFA, CAPTCHA, and security prompts manually in the opened **Chrome** window
+   (isolated session — not your everyday Chrome profile).
+6. Press Enter in the terminal after login completes.
+
+If Google shows **"This browser or app may not be secure"**, close the window, confirm Chrome is
+installed, and rerun `npm run google:login`. Do not use Playwright Chromium for this step.
+
+The saved `.auth/google-state.json` file is a credential. It is gitignored and must be
+mounted as a protected file in production. Never commit or print it. Rerun the login command
+when Google expires the session.
+
+Google Workspace administrators and meeting hosts can block unsigned guests and external
+accounts. ZeroClutter reports those restrictions but cannot bypass them.
+
+### Auth modes (`GOOGLE_AUTH_MODE`)
+
+| Mode | Behavior |
+|---|---|
+| `guest` | Unsigned named guest only (`BOT_DEFAULT_NAME` or per-job `displayName`). |
+| `account` | Authenticated join only; requires a valid `GOOGLE_STORAGE_STATE_PATH`. |
+| `hybrid` | Guest first; one authenticated retry for account-required or guest-blocked screens. |
+
+In `hybrid` mode, a missing or expired session does not block the initial guest attempt. If
+authenticated fallback is needed and the session is missing or invalid, the bot fails with
+`statusDetail` instructing `npm run google:login`.
+
+`botEmail` is set to `GOOGLE_BOT_EMAIL` when an authenticated join is attempted, either
+directly in `account` mode or during a `hybrid` fallback. Because it is persisted before
+the authenticated attempt starts, it may remain set if that attempt fails.
+
+### Security
+
+- No Google password, MFA secret, or recovery code is stored in `.env`, source control, or
+  the database.
+- `GOOGLE_STORAGE_STATE_PATH` (default `.auth/google-state.json`) is a credential — treat it
+  like a password. Mount it as a protected secret file in production; never bake it into
+  container images.
+- Each job launches one Playwright browser and creates one isolated context per join
+  attempt. A `hybrid` fallback closes the guest context before sequentially creating an
+  authenticated context that loads the storage-state file. Jobs never reuse a personal
+  Chrome profile.
+- `.auth/` and `.debug/` are gitignored. Debug dumps intentionally omit input values,
+  cookies, tokens, and storage state.
+- Rotate an expired session by rerunning `cd bot-worker && npm run google:login`.
+
+### Troubleshooting
+
+| Symptom / `statusDetail` | Likely cause | Action |
+|---|---|---|
+| `Bot Google session is missing; run npm run google:login` | No storage-state file when account fallback is required | Run `npm run google:login` in `bot-worker` |
+| Google: "This browser or app may not be secure" during login | Playwright Chromium was used, or automation flags were detected | Install Google Chrome and rerun `npm run google:login` (worker uses system Chrome) |
+| `Bot Google session is invalid; run npm run google:login` | Corrupt or empty storage-state file | Delete `.auth/google-state.json` and rerun login |
+| `Bot Google session expired; run npm run google:login` | Google redirected to sign-in during authenticated join | Rerun `npm run google:login` |
+| `Guest access blocked; retrying with bot account` | Meet blocked unsigned guests; hybrid retry in progress | Normal in `hybrid` mode — ensure session is valid |
+| `Host organization blocks external accounts` | Workspace policy blocks the dedicated bot account | Cannot bypass; host must allow the bot account or use guest-allowed meetings |
+| `Google Meet join screen was not recognized; inspect bot-worker/.debug` | The lobby remained unrecognized until timeout | Inspect the sanitized timeout dump in `bot-worker/.debug/`; update `selectors.ts` if Meet changed |
+| `Guest name input was not found` | Guest lobby was recognized, but name-input selectors drifted | Update the name-input selectors in `selectors.ts`; this path does not currently create a `.debug` dump |
+| `Join button was not found` | Lobby was recognized, but join-button selectors drifted | Update the join-button selectors in `selectors.ts`; this path does not currently create a `.debug` dump |
+| `Not admitted within N min` | Host never admitted the bot | Admit the bot in Meet or increase `ADMISSION_TIMEOUT_MS` |
+| `Host denied admission` | Host rejected the join request | Retry dispatch or ask host to admit |
+| Invalid/ended meeting failures | Bad URL or meeting already ended | No authenticated fallback; fix the meeting link |
 
 ### End-to-end verification (manual)
 
@@ -407,5 +480,5 @@ src/
 prisma/
 ├── schema.prisma                  # Database schema (6 models)
 └── migrations/                    # Versioned migration history
-tests/                             # 48 unit tests (Jest + ts-jest)
+tests/                             # 62 unit tests (Jest + ts-jest)
 ```

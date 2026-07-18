@@ -1,8 +1,8 @@
-import { useRef } from 'react'
 import { NavLink, useParams } from 'react-router-dom'
 import {
   LayoutDashboard,
   Video,
+  Bot,
   CheckSquare,
   Sparkles,
   BarChart2,
@@ -18,6 +18,7 @@ import { cn } from '../lib/cn'
 const PRIMARY_NAV = [
   { label: 'Overview', icon: LayoutDashboard, path: 'overview' },
   { label: 'Meetings', icon: Video, path: 'meetings' },
+  { label: 'Meeting Bots', icon: Bot, path: 'bots' },
   { label: 'Tasks', icon: CheckSquare, path: 'tasks' },
   { label: 'AI Assistant', icon: Sparkles, path: 'assistant' },
 ]
